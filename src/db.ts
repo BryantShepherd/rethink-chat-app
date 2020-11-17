@@ -6,7 +6,7 @@ const rdbConnect = async function () {
     const connOptions: ConnectionOptions = {
       host: "localhost",
       port: 28015,
-      db: "shop",
+      db: "chats",
     };
     const conn = await r.connect(connOptions);
 
