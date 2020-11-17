@@ -166,4 +166,55 @@ body {
   background: white;
   border: 1px solid black;
 }
+
+.message-item-body {
+  background-color: aliceblue;
+  width: 70%;
+  max-width: 500px;
+}
+
+.width-100 {
+  width: 100%;
+}
+
+#message-item-body-timestamp {
+  float: right;
+  font-size: 0.7em;
+  opacity: 0.6;
+}
+
+#message-list-date {
+  text-size-adjust: 100%;
+  color: #282c31;
+  background-color: transparent;
+  font-size: 13px;
+  line-height: 1.38;
+  box-sizing: border-box;
+  position: relative;
+  text-align: center;
+  list-style-type: none;
+}
+
+#message-list-date::before {
+  content: "";
+  background-color: rgba(220, 222, 226, 0.4);
+  display: block;
+  height: 1px;
+  position: absolute;
+  top: 50%;
+  width: 100%;
+}
+
+#message-list-date > span {
+  text-size-adjust: 100%;
+  line-height: 1.38;
+  text-align: center;
+  list-style-type: none;
+  box-sizing: border-box;
+  display: inline-block;
+  font-size: 12px;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
 /*# sourceMappingURL=main.css.map */
