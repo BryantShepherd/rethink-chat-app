@@ -10,22 +10,27 @@ interface ChatMessage {
   sender: { id: number; name: string };
 }
 
-export function listen(httpServer: HttpServer) {
-  let io = new Server(httpServer);
+let io = new Server(3001, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
 
-  io.on("connection", async (socket: Socket) => {
-    let conn = await getRethinkDB();
+io.on("connection", async (socket: Socket) => {
+  let conn = await getRethinkDB();
 
-    socket.on("NEW_MESSAGE", (message: ChatMessage, fn) => {
-      r.table("messages")
-        .insert(message)
-        .run(conn)
-        .then(() => {
-          fn();
-        })
-        .catch((err) => {
-          fn(err);
-        });
-    });
-  })
-}
+  socket.on("NEW_MESSAGE", (message: ChatMessage, fn) => {
+    r.table("messages")
+      .insert(message)
+      .run(conn)
+      .then(() => {
+        fn();
+      })
+      .catch((err) => {
+        fn(err);
+      });
+  });
+})
+
+export default io;
