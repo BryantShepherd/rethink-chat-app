@@ -2,6 +2,7 @@
 
 // Create random username
 let username = Math.random().toString(36).substring(2, 8);
+let userId = "";
 
 // Setup socket.io
 var socket = io("http://localhost:3001");
@@ -41,7 +42,7 @@ const MessageItem = Vue.component("message-item", {
     <div class="d-flex flex-column width-100 ml-2">
       <h4>{{ message.sender.name }}</h4>
       <div class="message-item-body pa-3 rounded-t-lg rounded-r-lg message-item">
-        <p class="mb-0">{{ message.message.richText || message.message.text }}</p>
+        <p class="mb-0">{{ message.content }}</p>
         <span id="message-item-body-timestamp">{{ message.createdAt }}</span>
       </div>
     </div>
@@ -107,8 +108,8 @@ const MessageScreen = Vue.component("message-screen", {
   template: `
   <v-container fluid class="d-flex pa-0">
     <div class="fit-v-viewport pr-1 col-3" id="conversation-list">
-      <v-list v-for="convo in []" :key="convo.id">
-        <conversation-item :convoName="convo.conversation_name" :avatarUrl="convo.avatarUrl" />
+      <v-list v-for="convo in roomList" :key="convo.id">
+        <conversation-item :convoName="convo.name" :avatarUrl="convo.avatarUrl" />
       </v-list>
     </div>
     <div class="d-flex flex-column width-100 fit-v-viewport">
@@ -120,98 +121,80 @@ const MessageScreen = Vue.component("message-screen", {
       </div>
       <div id="message-list-item" class="fill-height">
         <message-list-date date="October 20, 2020" />
-        <message-item v-for="message in messageList" :key="message.id" :message="message" />
+        <message-item v-for="message in currentRoomMessage" :key="message.id" :message="message" />
       </div>
       <message-text-box @submit="onSendMessage" />
     </div>
   </v-container>`,
   watch: {
-    $route: "fetchData",
+    $route: "fetchMessage",
   },
   methods: {
-    fetchData() {},
-    onSendMessage() {},
+    fetchRooms() {
+      return fetch("http://localhost:3000/api/users/rooms")
+        .then((res) => res.json())
+        .then((data) => {
+          this.roomList = data;
+        });
+    },
+    fetchMessages() {
+      let roomId = this.$route.params.roomId;
+      this.currentConvo = this.roomList.find((r) => r.id === roomId);
+      // console.log(this.currentRoomMessage);
+      if (!roomId) return;
+
+      return new Promise((resolve, reject) => {
+        if (this.messageList[roomId]) {
+          resolve(this.messageList[roomId]);
+        }
+
+        fetch(`http://localhost:3000/api/users/message/${roomId}`)
+          .then((res) => res.json())
+          .then((data) => {
+            // this.messageList[roomId] = data;
+            Vue.set(this.messageList, roomId, data);
+          })
+          .then(() => {
+            socket.emit("JOIN_ROOM", roomId);
+            resolve(this.messageList[roomId]);
+          })
+          .catch(reject);
+      });
+    },
+    onSendMessage(message) {
+      socket.emit(
+        "NEW_MESSAGE",
+        {
+          content: message,
+          ts: new Date(),
+          senderId: userId,
+          roomId: this.$route.params.roomId,
+        },
+        (err, success) => {
+          if (err) {
+            console.error(err);
+          }
+          console.log(success);
+        }
+      );
+    },
+  },
+  computed: {
+    currentRoomMessage() {
+      return this.messageList[this.currentConvo.id];
+    },
   },
   created() {
-    this.fetchData();
+    this.fetchRooms().then(() => this.fetchMessages());
+    socket.on("NEW_MESSAGE", (message) => {
+      this.messageList[message.roomId].push(message);
+    });
   },
   data() {
     return {
-      messageList: [
-        {
-          id: 1,
-          sender: {
-            id: 1,
-            name: "Annie Edison",
-          },
-          conversationId: 1,
-          message: {
-            richText: "Hello from the other side.",
-            text: "Hello from the other side.",
-          },
-          createdAt: "10:12 AM",
-        },
-        {
-          id: 2,
-          sender: {
-            id: 1,
-            name: "Annie Edison",
-          },
-          conversationId: 1,
-          message: {
-            richText:
-              "Will justice philosophy madness passion victorious justice depths aversion abstract selfish enlightenment hatred. Truth ascetic salvation value victorious merciful marvelous truth holiest value hatred derive. Holiest transvaluation derive self hope evil fearful ideal merciful. Strong ultimate disgust christianity zarathustra christian disgust inexpedient inexpedient. Overcome enlightenment sea sexuality fearful depths hope pious eternal-return salvation.",
-            text:
-              "Will justice philosophy madness passion victorious justice depths aversion abstract selfish enlightenment hatred. Truth ascetic salvation value victorious merciful marvelous truth holiest value hatred derive. Holiest transvaluation derive self hope evil fearful ideal merciful. Strong ultimate disgust christianity zarathustra christian disgust inexpedient inexpedient. Overcome enlightenment sea sexuality fearful depths hope pious eternal-return salvation.",
-          },
-          createdAt: "10:18 AM",
-        },
-        {
-          id: 3,
-          sender: {
-            id: 1,
-            name: "Annie Edison",
-          },
-          conversationId: 1,
-          message: {
-            richText:
-              "Someone like you. Someone who'll rattle the cages. Does it come in black?",
-            text:
-              "Someone like you. Someone who'll rattle the cages. Does it come in black?",
-          },
-          createdAt: "10:18 AM",
-        },
-        {
-          id: 4,
-          sender: {
-            id: 1,
-            name: "Annie Edison",
-          },
-          conversationId: 1,
-          message: {
-            richText:
-              " Swear to me! My anger outweights my guilt. It's not who I am underneath but what I do that defines me. I can't do that as Bruce Wayne... as a man. I'm flesh and blood. I can be ignored, destroyed. But as a symbol, I can be incorruptible, I can be everlasting.",
-            text:
-              " Swear to me! My anger outweights my guilt. It's not who I am underneath but what I do that defines me. I can't do that as Bruce Wayne... as a man. I'm flesh and blood. I can be ignored, destroyed. But as a symbol, I can be incorruptible, I can be everlasting.",
-          },
-          createdAt: "10:18 AM",
-        },
-        {
-          id: 5,
-          sender: {
-            id: 1,
-            name: "Annie Edison",
-          },
-          conversationId: 1,
-          message: {
-            richText:
-              " Does it come in black? This isn't a car. Well, you see... I'm buying this hotel and setting some new rules about the pool area.",
-            text:
-              " Does it come in black? This isn't a car. Well, you see... I'm buying this hotel and setting some new rules about the pool area. ",
-          },
-          createdAt: "10:18 AM",
-        },
-      ],
+      messageList: {},
+      roomList: [],
+      currentConvo: {},
     };
   },
 });
@@ -227,7 +210,23 @@ const MainView = Vue.component("main-view", {
   methods: {
     gotoRoom() {
       username = this.user;
-      this.$router.push({ name: "room", params: { roomId: this.room } });
+      fetch("http://localhost:3000/api/users", {
+        method: "post",
+        body: JSON.stringify({ name: this.user }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          let generated_key = data[0];
+          userId = generated_key;
+          this.$router.push({
+            name: "message",
+            params: { roomId: "2601d45e-623f-402a-b7d9-1774816fb297" },
+          });
+        })
+        .catch(console.error);
     },
   },
   template: `
@@ -241,79 +240,11 @@ const MainView = Vue.component("main-view", {
     `,
 });
 
-// Room view, holds a ChatRoom component
-const RoomView = Vue.component("room-view", {
-  template: `<chat-room :roomId="$route.params.roomId"/>`,
-});
-
-// ChatRoom component
-const ChatRoom = Vue.component("chat-room", {
-  props: ["roomId"],
-  data() {
-    return {
-      chats: [],
-      message: "",
-      username: username,
-      handle: null,
-    };
-  },
-  async created() {
-    // const url = new URL(
-    //   document.location.protocol +
-    //     "//" +
-    //     document.location.host +
-    //     "/chats/" +
-    //     this.roomId
-    // );
-    // const chatsResp = await fetch(url);
-    // const { data, handle } = await chatsResp.json();
-    // this.chats = data;
-    // this.handle = handle;
-    // socket.on(this.handle, (msg) => {
-    //   this.chats.unshift(msg);
-    // });
-  },
-  beforeDestroy() {
-    // socket.off(this.handle);
-  },
-  methods: {
-    sendMessage() {
-      socket.emit("chats", {
-        msg: this.message,
-        user: this.username,
-        roomId: this.roomId,
-      });
-      this.message = "";
-    },
-  },
-  template: `
-<div class="chatroom">
-    <ul id="chatlog">
-        <li v-for="chat in chats">
-            <span class="timestamp">
-                {{ new Date(chat.ts).toLocaleString(undefined, {dateStyle: 'short', timeStyle: 'short'}) }}
-            </span>
-            <span class="user">{{ chat.user }}:</span>
-            <span class="msg">{{ chat.msg }}</span>
-        </li>
-    </ul>
-    <label id="username">Username:
-        {{ username }}
-    </label>
-    <form v-on:submit.prevent="sendMessage">
-        <input v-model="message" autocomplete="off" />
-        <button>Send</button>
-    </form>
-</div>
-    `,
-});
-
 // Setup routes
 const router = new VueRouter({
   routes: [
-    { path: "/", component: MessageScreen },
-    { path: "/:roomId", name: "room", component: RoomView },
-    { path: "/message", name: "message", component: MessageScreen },
+    { path: "/", component: MainView },
+    { path: "/message/:roomId", name: "message", component: MessageScreen },
   ],
 });
 

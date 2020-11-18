@@ -217,4 +217,25 @@ body {
   text-transform: uppercase;
   letter-spacing: 2px;
 }
+
+div#conversation-app-bar {
+  width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.fit-v-viewport {
+  height: 100vh;
+  max-height: 100vh;
+}
+
+#message-list-item,
+#conversation-list {
+  overflow-y: scroll;
+}
+
+#conversation-list {
+  border-right: 1px solid rgba(30, 30, 30, 0.1);
+  max-width: 250px;
+  min-width: 80px;
+}
 /*# sourceMappingURL=main.css.map */

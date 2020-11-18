@@ -8,6 +8,7 @@ interface ChatMessage {
   content: string;
   ts: Date | string;
   sender: { id: number; name: string };
+  roomId: string
 }
 
 let io = new Server(3001, {
@@ -20,15 +21,19 @@ let io = new Server(3001, {
 io.on("connection", async (socket: Socket) => {
   let conn = await getRethinkDB();
 
+  socket.on("JOIN_ROOM", (roomId: string) => {
+    socket.join(roomId);
+  })
+
   socket.on("NEW_MESSAGE", (message: ChatMessage, fn) => {
     r.table("messages")
       .insert(message)
       .run(conn)
       .then(() => {
-        fn();
+        fn(null, true);
       })
       .catch((err) => {
-        fn(err);
+        fn(err, false);
       });
   });
 })
