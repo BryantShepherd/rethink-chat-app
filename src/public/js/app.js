@@ -9,7 +9,7 @@ var socket = io("http://localhost:3001");
 
 const ConversationItem = Vue.component("conversation-item", {
   template: `
-  <v-list-item link class="py-0">
+  <v-list-item link @click="onClick" class="py-0">
     <v-list-item-avatar v-if="avatarUrl">
       <v-img :src="avatarUrl"></v-img>
     </v-list-item-avatar>
@@ -30,7 +30,15 @@ const ConversationItem = Vue.component("conversation-item", {
     iconName: {
       type: String,
     },
+    room: {
+      type: Object
+    }
   },
+  methods: {
+    onClick() {
+      this.$router.push({ name: "message", params: {roomId: this.room.id} });
+    }
+  }
 });
 
 const MessageItem = Vue.component("message-item", {
@@ -43,7 +51,7 @@ const MessageItem = Vue.component("message-item", {
       <h4>{{ message.sender.name }}</h4>
       <div class="message-item-body pa-3 rounded-t-lg rounded-r-lg message-item">
         <p class="mb-0">{{ message.content }}</p>
-        <span id="message-item-body-timestamp">{{ message.createdAt }}</span>
+        <span id="message-item-body-timestamp">{{ message.ts }}</span>
       </div>
     </div>
   </div>`,
@@ -109,7 +117,7 @@ const MessageScreen = Vue.component("message-screen", {
   <v-container fluid class="d-flex pa-0">
     <div class="fit-v-viewport pr-1 col-3" id="conversation-list">
       <v-list v-for="convo in roomList" :key="convo.id">
-        <conversation-item :convoName="convo.name" :avatarUrl="convo.avatarUrl" />
+        <conversation-item :convoName="convo.name" :avatarUrl="convo.avatarUrl" :room="convo" />
       </v-list>
     </div>
     <div class="d-flex flex-column width-100 fit-v-viewport">
@@ -127,7 +135,7 @@ const MessageScreen = Vue.component("message-screen", {
     </div>
   </v-container>`,
   watch: {
-    $route: "fetchMessage",
+    $route: "fetchMessages",
   },
   methods: {
     fetchRooms() {

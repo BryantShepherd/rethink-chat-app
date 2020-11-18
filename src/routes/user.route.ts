@@ -43,7 +43,7 @@ router.get("/message/:roomId", async (req, res, next) => {
   const orderedQuery = query
     .merge((msg: any) => ({ sender: r.table("users").get(msg("senderId")) }))
     .without("senderId")
-    .orderBy(r.desc("ts"));
+    .orderBy("ts");
 
   orderedQuery
     .run(conn)
