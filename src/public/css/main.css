@@ -173,6 +173,12 @@ body {
   max-width: 500px;
 }
 
+.message-item-body.is-mine {
+  align-self: flex-end;
+  background-color: #0070d2 !important;
+  color: white;
+}
+
 .width-100 {
   width: 100%;
 }

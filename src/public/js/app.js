@@ -44,12 +44,12 @@ const ConversationItem = Vue.component("conversation-item", {
 const MessageItem = Vue.component("message-item", {
   template: `
   <div class="d-flex pa-2">
-    <v-avatar class="align-self-end">
+    <v-avatar class="align-self-end" v-if="!isMine">
       <v-img src="https://randomuser.me/api/portraits/women/27.jpg" alt="avatar"></v-img>
     </v-avatar>
     <div class="d-flex flex-column width-100 ml-2">
-      <h4>{{ message.sender.name }}</h4>
-      <div class="message-item-body pa-3 rounded-t-lg rounded-r-lg message-item">
+      <h4 v-if="!isMine">{{ message.sender.name }}</h4>
+      <div :class="messageItemBodyClass">
         <p class="mb-0">{{ message.content }}</p>
         <span id="message-item-body-timestamp">{{ message.ts }}</span>
       </div>
@@ -60,6 +60,22 @@ const MessageItem = Vue.component("message-item", {
       type: Object,
       required: true,
     },
+    isMine: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  data() {
+    return {
+      messageItemBodyClass: [
+        "message-item-body",
+        "pa-3",
+        "rounded-t-lg",
+        this.isMine ? "rounded-l-lg" : "rounded-r-lg",
+        "message-item",
+        this.isMine ? "is-mine" : "",
+      ],
+    };
   },
 });
 
@@ -90,6 +106,7 @@ const MessageTextBox = Vue.component("message-text-box", {
       rows="2"
       no-resize
       background-color="#f5f5f5"
+      @keydown.enter.exact.prevent="onSend"
     ></v-textarea>
     <div id="message-text-box-menu" class="d-flex">
       <v-btn icon tile color="primary">
@@ -122,20 +139,20 @@ const MessageScreen = Vue.component("message-screen", {
     </div>
     <div class="d-flex flex-column width-100 fit-v-viewport">
       <div id="conversation-app-bar" class="pa-5 d-flex align-center justify-space-between">
-        <h3>Annie Edison</h3>
+        <h3>Chat App</h3>
         <v-btn icon>
           <v-icon>mdi-alert-circle-outline</v-icon>
         </v-btn>
       </div>
       <div id="message-list-item" class="fill-height">
-        <message-list-date date="October 20, 2020" />
-        <message-item v-for="message in currentRoomMessage" :key="message.id" :message="message" />
+        <message-item :isMine="isMyMsg(message.sender.id)" v-for="message in currentRoomMessage" :key="message.id" :message="message" />
       </div>
       <message-text-box @submit="onSendMessage" />
     </div>
   </v-container>`,
   watch: {
     $route: "fetchMessages",
+    currentRoomMessages: "scrollToEnd",
   },
   methods: {
     fetchRooms() {
@@ -186,11 +203,21 @@ const MessageScreen = Vue.component("message-screen", {
         }
       );
     },
+    isMyMsg(senderId) {
+      return senderId === userId;
+    },
+    scrollToEnd() {
+      this.$nextTick(() => {
+        const container = this.$el.querySelector("#message-list-item");
+        container.scrollTop = container.scrollHeight;
+      });
+    },
   },
   computed: {
     currentRoomMessage() {
       return this.messageList[this.currentConvo.id];
     },
+
   },
   created() {
     this.fetchRooms().then(() => this.fetchMessages());
