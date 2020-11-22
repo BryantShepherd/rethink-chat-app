@@ -9,7 +9,7 @@ var socket = io("http://localhost:3001");
 
 const ConversationItem = Vue.component("conversation-item", {
   template: `
-  <v-list-item link @click="onClick" class="py-0">
+  <v-list-item :to='{ name: "message", params: {roomId: this.room.id} }' class="py-0">
     <v-list-item-avatar v-if="avatarUrl">
       <v-img :src="avatarUrl"></v-img>
     </v-list-item-avatar>
@@ -34,18 +34,13 @@ const ConversationItem = Vue.component("conversation-item", {
       type: Object
     }
   },
-  methods: {
-    onClick() {
-      this.$router.push({ name: "message", params: {roomId: this.room.id} });
-    }
-  }
 });
 
 const MessageItem = Vue.component("message-item", {
   template: `
   <div class="d-flex pa-2">
     <v-avatar class="align-self-end" v-if="!isMine">
-      <v-img src="https://randomuser.me/api/portraits/women/27.jpg" alt="avatar"></v-img>
+      <v-img src="https://www.gravatar.com/avatar?d=mp&s=200" alt="avatar"></v-img>
     </v-avatar>
     <div class="d-flex flex-column width-100 ml-2">
       <h4 v-if="!isMine">{{ message.sender.name }}</h4>
@@ -152,7 +147,7 @@ const MessageScreen = Vue.component("message-screen", {
   </v-container>`,
   watch: {
     $route: "fetchMessages",
-    currentRoomMessages: "scrollToEnd",
+    currentRoomMessage: "scrollToEnd",
   },
   methods: {
     fetchRooms() {
@@ -265,13 +260,17 @@ const MainView = Vue.component("main-view", {
     },
   },
   template: `
-<div class="main">
-    <form class="main" v-on:submit.prevent="gotoRoom">
-    <label>Username: <input v-model="user" type="text" /></label>
-    <label>Room: <input v-model="room" type="text" /></label>
-    <button>Join</button>
-    </form>
-</div>
+  <v-container class="d-flex justify-center align-center">
+    <v-card elevation="2" width="500">
+    <v-card-text>
+    <v-text-field label="Username" v-model="user" ></v-text-field>
+    </v-card-text>
+    <v-card-actions>
+    <v-spacer />
+    <v-btn depressed @click="gotoRoom">Join</v-btn>
+    </v-card-actions>
+    </v-card>
+  </v-container>
     `,
 });
 
